@@ -1,0 +1,9 @@
+--local lockName = string.format("queue_lock_{%s}", KEYS[1])
+--
+--local lock = redis.call('SETNX', lockName, 1)
+--
+--if (lock == 1) then
+--    redis.call('EXPIRE', lockName, ARGV[1])
+--end
+--
+--return  lock
