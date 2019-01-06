@@ -47,6 +47,10 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         return this._client.state();
     }
 
+    public get statesCount(): Promise<number> {
+        return this._client.statesCount();
+    }
+
     public get stateSync(): T {
         return this._client.stateSync();
     }

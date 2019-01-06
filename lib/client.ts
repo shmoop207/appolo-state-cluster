@@ -62,7 +62,6 @@ export class Client<T> extends EventDispatcher {
 
         this._sub.on("message", this._onMessage.bind(this));
 
-
     }
 
     private _onConnectionClose() {
@@ -100,8 +99,8 @@ export class Client<T> extends EventDispatcher {
         this._stateHash = await this._getStateHash();
 
         this._refreshState(this._stateHash)
-
     }
+
 
     public async setState(state: T): Promise<void> {
 
@@ -148,7 +147,7 @@ export class Client<T> extends EventDispatcher {
         return JSON.parse(state)
     }
 
-    public async queueLength(): Promise<number> {
+    public async statesCount(): Promise<number> {
         return this._client.llen(`queue_{${this._options.name}}`)
     }
 

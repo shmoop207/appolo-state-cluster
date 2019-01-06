@@ -8,9 +8,7 @@ simple state manager for nodejs built with typescript
 ```javascript
 npm install appolo-state-cluster --save
 ```
-## Usage
 
-```
 
 
 ## Tests
