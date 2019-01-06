@@ -9,7 +9,7 @@ function delay(time) {
     })
 }
 
-const RedisConn = "redis://redis:5XuCersOB8fGwhhgOWZcnEBgBkS5rml4@redis-19273.c52.us-east-1-4.ec2.cloud.redislabs.com:19273"
+const RedisConn = process.env.REDIS
 
 let RedisParams = {
     maxStates: 5,

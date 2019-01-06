@@ -20,7 +20,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         this._options = Object.assign({}, DefaultOptions, options);
 
 
-        this._client = new Client(options);
+        this._client = new Client( this._options);
     }
 
     public async initialize(): Promise<void> {
@@ -154,7 +154,11 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     }
 
     public async reset(state?: T) {
-        await this._client.reset(state)
+        if(state){
+            this.initialState = state;
+        }
+
+        await this._client.reset(this.initialState)
 
     }
 
