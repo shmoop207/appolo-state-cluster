@@ -18,7 +18,8 @@ export class Client<T> extends EventDispatcher {
 
     private _interval = null;
 
-    private _publishStateEventName:string;
+    private readonly _publishStateEventName:string;
+    private readonly _publishEventName:string;
 
 
     private readonly Scripts = [{
@@ -39,6 +40,7 @@ export class Client<T> extends EventDispatcher {
         super();
 
         this._publishStateEventName  =`queue_publish_state_${this._options.name}`;
+        this._publishEventName = `queue_publish_{${this._options.name}}`
     }
 
 
@@ -88,9 +90,6 @@ export class Client<T> extends EventDispatcher {
 
     }
 
-    private get _publishEventName(): string {
-        return `queue_publish_{${this._options.name}}`
-    }
 
     public async initState(state: T): Promise<void> {
 
