@@ -283,7 +283,7 @@ describe("State", () => {
 
         await store.setCounter(5);
 
-        let state = await store.once("setCounter")
+        let state = await store.once("setCounter");
 
         state.counter.should.be.eq(5);
 

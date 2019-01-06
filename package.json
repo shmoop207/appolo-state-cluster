@@ -11,11 +11,11 @@
     "email": "shmoop207@gmail.com"
   },
   "engines": {
-    "node": ">= 8.4.x",
-    "npm": ">= 5.3.x"
+    "node": ">= 10.x.x",
+    "npm": ">= 6.x.x"
   },
   "scripts": {
-    "test": "mocha test"
+    "test": "mocha test  --timeout 5000 --exit"
   },
   "main": "./index.js",
   "version": "0.0.3",
