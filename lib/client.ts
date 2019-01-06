@@ -18,6 +18,8 @@ export class Client<T> extends EventDispatcher {
 
     private _interval = null;
 
+    private _publishStateEventName:string;
+
 
     private readonly Scripts = [{
         name: "init", args: 1
@@ -35,6 +37,8 @@ export class Client<T> extends EventDispatcher {
 
     constructor(private _options: IOptions) {
         super();
+
+        this._publishStateEventName  =`queue_publish_state_${this._options.name}`;
     }
 
 
@@ -82,10 +86,6 @@ export class Client<T> extends EventDispatcher {
             });
         }));
 
-    }
-
-    private get _publishStateEventName(): string {
-        return `queue_publish_state_${this._options.name}`
     }
 
     private get _publishEventName(): string {
