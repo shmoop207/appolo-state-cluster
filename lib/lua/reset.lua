@@ -17,3 +17,5 @@ redis.call('SET', initialName, state)
 
 redis.call("PUBLISH", publishName, state)
 redis.call("PUBLISH", publishIndexName, 0)
+
+return { state }

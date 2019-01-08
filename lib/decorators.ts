@@ -16,7 +16,7 @@ export function action(name?: string): (target: any, propertyKey: string, descri
                 result = await result;
             }
 
-            let state = await this.state;
+            let state = await this.state();
 
             this.publish(name || propertyKey, state);
 
@@ -24,5 +24,22 @@ export function action(name?: string): (target: any, propertyKey: string, descri
         }
     }
 
+}
+
+export function transaction(lockTimeMilli = 5000, lockRetryMilli = 5): (target: any, propertyKey: string, descriptor?: PropertyDescriptor) => void {
+
+    return function (target: any, propertyKey: string, descriptor?: PropertyDescriptor) {
+
+        let method = descriptor["value"];
+
+        descriptor["value"] = async function () {
+
+            let state = await this.lock(lockTimeMilli, lockRetryMilli);
+
+            return method.apply(this, [...arguments,state]);
+
+
+        }
+    }
 
 }

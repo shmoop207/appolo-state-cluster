@@ -6,7 +6,7 @@ if (ARGV[1] == "true") then
      lock = redis.call('SETNX', lockName, 1)
 
     if (lock == 0) then
-        return { "{}", 0 }
+        return { "{}", true }
     end
 
      redis.call('EXPIRE', lockName, tonumber(ARGV[2]))
@@ -18,4 +18,4 @@ local indexName = string.format("queue_index_{%s}", KEYS[1])
 
 local state = redis.call('LINDEX', queueName, redis.call("GET", indexName))
 
-return { state ,lock}
+return { state ,false}

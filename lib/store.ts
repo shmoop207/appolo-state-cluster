@@ -4,6 +4,7 @@ import {Client} from "./client";
 import * as _ from 'lodash'
 import {IEventOptions} from "appolo-event-dispatcher/lib/IEventOptions";
 import {Util} from "./util";
+import Timer = NodeJS.Timer;
 
 
 export class Store<T extends { [index: string]: any }> extends EventDispatcher {
@@ -11,6 +12,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     private _client: Client<T>;
     private readonly _options: IOptions;
 
+    private _lockedInterval: Timer;
     private _isLocked = false;
 
     constructor(private initialState: T = {} as T, options: IOptions) {
@@ -20,7 +22,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         this._options = Object.assign({}, DefaultOptions, options);
 
 
-        this._client = new Client( this._options);
+        this._client = new Client(this._options);
     }
 
     public async initialize(): Promise<void> {
@@ -43,16 +45,12 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
 
     }
 
-    public get state(): Promise<T> {
+    public state(): Promise<T> {
         return this._client.state();
     }
 
     public get statesCount(): Promise<number> {
         return this._client.statesCount();
-    }
-
-    public get stateSync(): T {
-        return this._client.stateSync();
     }
 
     public get states(): AsyncIterableIterator<T> {
@@ -91,13 +89,11 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
 
         if (options.override) {
             await this._client.setState(value as T);
-
             this._isLocked = false;
-
             return;
         }
 
-        let state = await (this._isLocked ? this.state : this.lock());
+        let state = await (this._isLocked ? this.state() : this.lock());
 
         state = _.mergeWith(state, value, options.arrayMerge == "concat" ? Util.arrayConcat : null);
 
@@ -120,11 +116,16 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
 
     public async lock(timeMilli = 5000, retryMilli = 5): Promise<T> {
 
-        let state = await this._client.lock(timeMilli, retryMilli);
+        if (this._isLocked) {
+            await Util.delay(retryMilli);
+            return this.lock(timeMilli, retryMilli)
+        }
 
         this._isLocked = true;
 
-        setTimeout(() => this._isLocked = false, timeMilli);
+        let state = await this._client.lock(timeMilli, retryMilli);
+
+        this._lockedInterval = setTimeout(() => this._isLocked = false, timeMilli);
 
         return state
     }
@@ -154,7 +155,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     }
 
     public async reset(state?: T) {
-        if(state){
+        if (state) {
             this.initialState = state;
         }
 
@@ -167,6 +168,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     }
 
     public async quit() {
+        clearTimeout(this._lockedInterval);
         this._client.removeAllListeners();
         await this._client.quit()
 

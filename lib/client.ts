@@ -17,9 +17,10 @@ export class Client<T> extends EventDispatcher {
     private _stateHash: string;
 
     private _interval = null;
+    private _isValidCache: boolean;
 
-    private readonly _publishStateEventName:string;
-    private readonly _publishEventName:string;
+    private readonly _publishStateEventName: string;
+    private readonly _publishEventName: string;
 
 
     private readonly Scripts = [{
@@ -39,7 +40,7 @@ export class Client<T> extends EventDispatcher {
     constructor(private _options: IOptions) {
         super();
 
-        this._publishStateEventName  =`queue_publish_state_${this._options.name}`;
+        this._publishStateEventName = `queue_publish_state_${this._options.name}`;
         this._publishEventName = `queue_publish_{${this._options.name}}`
     }
 
@@ -48,10 +49,8 @@ export class Client<T> extends EventDispatcher {
 
         let params = {enableReadyCheck: true, lazyConnect: true, keepAlive: 1000};
 
-        this._client = new Redis(this._options.redis, params);
-
-
-        this._sub = new Redis(this._options.redis, params);
+        this._client = this._options.redisClient || new Redis(this._options.redis, params);
+        this._sub = this._options.redisPubSub || new Redis(this._options.redis, params);
 
         await this.loadScripts();
 
@@ -60,8 +59,9 @@ export class Client<T> extends EventDispatcher {
         this._client.on("end", this._onConnectionClose.bind(this));
         this._client.on("connect", this._onConnectionOpen.bind(this));
 
-
-        await Promise.all([this._client.connect(), this._sub.connect()]);
+        if (!this._options.redisClient) {
+            await Promise.all([this._client.connect(), this._sub.connect()]);
+        }
 
         this._sub.subscribe(this._publishStateEventName);
         this._sub.subscribe(this._publishEventName);
@@ -80,6 +80,10 @@ export class Client<T> extends EventDispatcher {
     private async loadScripts() {
 
         await Promise.all(_.map(this.Scripts, async script => {
+            if (this._client[script.name]) {
+                return;
+            }
+
             let lua = await promisify(fs.readFile)(path.resolve(__dirname, "lua", `${script.name}.lua`), {encoding: "UTF8"})
 
             this._client.defineCommand(script.name, {
@@ -124,12 +128,9 @@ export class Client<T> extends EventDispatcher {
 
     public async goToState(index: number, increment = 0): Promise<void> {
         await (this._client as any).goToState(this._options.name, index, increment || 0);
+        this._isValidCache = false;
     }
 
-    public stateSync(): T {
-
-        return JSON.parse(this._stateHash)
-    }
 
     private async _getStateHash(): Promise<string> {
         let [state] = await (this._client as any).state(this._options.name);
@@ -139,11 +140,16 @@ export class Client<T> extends EventDispatcher {
 
     public async state(): Promise<T> {
 
-        let state = await this._getStateHash();
+        let stateHash: string;
 
-        this._refreshState(state);
+        if (this._options.cache && this._isValidCache) {
+            stateHash = this._stateHash;
+        } else {
+            stateHash = await this._getStateHash();
+            this._refreshState(stateHash);
+        }
 
-        return JSON.parse(state)
+        return JSON.parse(stateHash)
     }
 
     public async statesCount(): Promise<number> {
@@ -182,9 +188,9 @@ export class Client<T> extends EventDispatcher {
     }
 
     public async lock(lockTimeMilli = 5000, lockRetryMilli = 5): Promise<T> {
-        let [stateHash, lock] = await (this._client as any).state(this._options.name, "true", Math.ceil(lockTimeMilli / 1000));
+        let [stateHash, isLocked] = await (this._client as any).state(this._options.name, "true", Math.ceil(lockTimeMilli / 1000));
 
-        if (lock != 0) {
+        if (!isLocked) {
 
             this._refreshState(stateHash);
 
@@ -210,6 +216,9 @@ export class Client<T> extends EventDispatcher {
                 this._stateHash = await this._getStateHash()
             }
 
+            this._isValidCache = true;
+            setTimeout(() => this._isValidCache = false, this._options.cacheTime);
+
             if (oldState != this._stateHash) {
                 process.nextTick(() => this.fireEvent("stateChanged", JSON.parse(this._stateHash)))
             }
@@ -230,9 +239,9 @@ export class Client<T> extends EventDispatcher {
     }
 
     public async reset(state?: T) {
+        let [stateHash] = await (this._client as any).reset(this._options.name, JSON.stringify(state), !!state);
+        this._refreshState(stateHash);
 
-
-        await (this._client as any).reset(this._options.name, JSON.stringify(state), !!state);
     }
 
 
