@@ -1,6 +1,6 @@
 {
   "name": "appolo-state-cluster",
-  "description": "simple state managemnt for nodejs",
+  "description": "simple state managemnt",
   "keywords": [
     "state",
     "state-cluster",
@@ -22,7 +22,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shmoop207/appolo-state.git"
+    "url": "https://github.com/shmoop207/appolo-state-cluster.git"
   },
   "readme": "",
   "readmeFilename": "README.md",
