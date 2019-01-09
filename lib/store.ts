@@ -53,7 +53,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         return this._client.statesCount();
     }
 
-    public get states(): AsyncIterableIterator<T> {
+    public  states(): AsyncIterableIterator<T> {
 
         let $self = this, index = -1;
 
