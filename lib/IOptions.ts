@@ -15,9 +15,17 @@ export let DefaultOptions: Partial<IOptions> = {
     maxStates: 1,
     cache: true,
     cacheTime: 60 * 1000
-}
+};
 
 export interface SetStateOptions {
     override?: boolean,
+    lock?: boolean
     arrayMerge?: "override" | "concat"
 }
+
+export let SetStateDefaults:SetStateOptions = {
+    override: false,
+    lock: true,
+    arrayMerge: "concat",
+
+};

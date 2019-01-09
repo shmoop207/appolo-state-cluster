@@ -303,8 +303,8 @@ describe("State", () => {
 
             @action()
             @transaction()
-            async setCounter(value,state?) {
-                await this.setState({counter: state.counter+5});
+            async setCounter(value, state?) {
+                await this.setState({counter: state.counter + 5});
             }
         }
 
@@ -359,6 +359,7 @@ describe("State", () => {
             store.setState({counter: 4, d: 1} as any)]);
 
 
+        await delay(300);
         let state: any = await store.state();
 
         state.counter.should.be.eq(4)

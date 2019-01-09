@@ -223,6 +223,7 @@ describe("State", () => {
             store.setState({ counter: 3, c: 1 }),
             store.setState({ counter: 4, d: 1 })
         ]);
+        await delay(300);
         let state = await store.state();
         state.counter.should.be.eq(4);
         state.b.should.be.eq(1);

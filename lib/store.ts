@@ -1,4 +1,4 @@
-import {DefaultOptions, IOptions, SetStateOptions} from "./IOptions";
+import {DefaultOptions, IOptions, SetStateDefaults, SetStateOptions} from "./IOptions";
 import {EventDispatcher} from "appolo-event-dispatcher";
 import {Client} from "./client";
 import * as _ from 'lodash'
@@ -85,7 +85,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     }
 
 
-    public async setState(value: Partial<T> | T, options: SetStateOptions = {arrayMerge: "concat", override: false}) {
+    public async setState(value: Partial<T> | T, options: SetStateOptions = SetStateDefaults) {
 
         if (options.override) {
             await this._client.setState(value as T);
@@ -93,7 +93,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
             return;
         }
 
-        let state = await (this._isLocked ? this.state() : this.lock());
+        let state = await ((this._isLocked || !options.lock) ? this.state() : this.lock());
 
         state = _.mergeWith(state, value, options.arrayMerge == "concat" ? Util.arrayConcat : null);
 
