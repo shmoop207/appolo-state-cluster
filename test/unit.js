@@ -83,7 +83,7 @@ describe("State", () => {
             finally { if (e_1) throw e_1.error; }
         }
         count.should.be.eq(3);
-        (await store.states.next()).value.counter.should.be.eq(0);
+        (await store.states().next()).value.counter.should.be.eq(0);
         await store.reset();
     });
     it("Should go to prev state", async () => {

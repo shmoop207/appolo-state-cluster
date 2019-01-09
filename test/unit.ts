@@ -135,7 +135,7 @@ describe("State", () => {
 
         count.should.be.eq(3);
 
-        (await (store.states as any).next()).value.counter.should.be.eq(0);
+        (await (store.states() as any).next()).value.counter.should.be.eq(0);
 
         await store.reset();
 
