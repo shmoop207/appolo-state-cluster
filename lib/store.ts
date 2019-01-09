@@ -121,9 +121,10 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
             return this.lock(timeMilli, retryMilli)
         }
 
-        this._isLocked = true;
+
 
         let state = await this._client.lock(timeMilli, retryMilli);
+        this._isLocked = true;
 
         this._lockedInterval = setTimeout(() => this._isLocked = false, timeMilli);
 

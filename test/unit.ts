@@ -362,11 +362,11 @@ describe("State", () => {
         await delay(300);
         let state: any = await store.state();
 
-        state.counter.should.be.eq(4)
-        state.b.should.be.eq(1)
-        state.a.should.be.eq(1)
-        state.c.should.be.eq(1)
-        state.d.should.be.eq(1)
+        state.counter.should.be.eq(4);
+        state.b.should.be.eq(1);
+        state.a.should.be.eq(1);
+        state.c.should.be.eq(1);
+        state.d.should.be.eq(1);
 
 
     });
