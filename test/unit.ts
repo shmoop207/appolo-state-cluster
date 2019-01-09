@@ -73,6 +73,8 @@ describe("State", () => {
         await delay(300);
 
         (await store2.state()).counter.should.be.eq(0);
+
+        await store2.quit();
     });
 
 
@@ -113,6 +115,8 @@ describe("State", () => {
         state.counter.should.be.eq(1);
 
         await store.reset();
+
+        await store2.quit();
 
     });
 
@@ -449,6 +453,10 @@ describe("State", () => {
         let state = await store.state();
 
         state.counter.should.be.eq(6)
+
+        await Promise.all([
+            store2.quit(), store3.quit()]);
+
     });
 
 
