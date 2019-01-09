@@ -129,7 +129,7 @@ describe("State", () => {
 
         let count = 0;
 
-        for await (let state of  store.states) {
+        for await (let state of  store.states()) {
             count += state.counter;
         }
 

@@ -70,7 +70,7 @@ describe("State", () => {
         await store.setState({ counter: 2 });
         let count = 0;
         try {
-            for (var _b = tslib_1.__asyncValues(store.states), _c; _c = await _b.next(), !_c.done;) {
+            for (var _b = tslib_1.__asyncValues(store.states()), _c; _c = await _b.next(), !_c.done;) {
                 let state = _c.value;
                 count += state.counter;
             }
