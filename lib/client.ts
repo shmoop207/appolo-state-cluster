@@ -1,9 +1,9 @@
 import Redis = require("ioredis");
 import path = require("path");
 import fs = require("fs");
-import _ = require("lodash");
+import {Promises} from '@appolo/utils'
 import {IOptions} from "./IOptions";
-import {EventDispatcher} from "appolo-event-dispatcher";
+import {EventDispatcher} from "@appolo/events";
 import {Util} from "./util";
 
 const {promisify} = require('util');
@@ -79,7 +79,7 @@ export class Client<T> extends EventDispatcher {
 
     private async loadScripts() {
 
-        await Promise.all(_.map(this.Scripts, async script => {
+        await Promise.all(this.Scripts.map( async script => {
             if (this._client[script.name]) {
                 return;
             }
@@ -197,7 +197,7 @@ export class Client<T> extends EventDispatcher {
             return JSON.parse(stateHash)
         }
 
-        await Util.delay(lockRetryMilli);
+        await Promises.delay(lockRetryMilli);
 
         return this.lock(lockTimeMilli, lockRetryMilli);
 

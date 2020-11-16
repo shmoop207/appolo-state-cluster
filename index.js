@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.transaction = exports.action = exports.Store = void 0;
 var store_1 = require("./lib/store");
-exports.Store = store_1.Store;
+Object.defineProperty(exports, "Store", { enumerable: true, get: function () { return store_1.Store; } });
 var decorators_1 = require("./lib/decorators");
-exports.action = decorators_1.action;
-exports.transaction = decorators_1.transaction;
+Object.defineProperty(exports, "action", { enumerable: true, get: function () { return decorators_1.action; } });
+Object.defineProperty(exports, "transaction", { enumerable: true, get: function () { return decorators_1.transaction; } });
 //# sourceMappingURL=index.js.map

@@ -1,11 +1,11 @@
 import {DefaultOptions, IOptions, SetStateDefaults, SetStateOptions} from "./IOptions";
-import {EventDispatcher} from "appolo-event-dispatcher";
+import {EventDispatcher} from "@appolo/events";
 import {Client} from "./client";
-import * as _ from 'lodash'
-import {IEventOptions} from "appolo-event-dispatcher/lib/IEventOptions";
+import {IEventOptions} from "@appolo/events";
 import {Util} from "./util";
+import * as _ from "lodash";
+import { Promises}from "@appolo/utils";
 import Timer = NodeJS.Timer;
-
 
 export class Store<T extends { [index: string]: any }> extends EventDispatcher {
 
@@ -117,7 +117,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
     public async lock(timeMilli = 5000, retryMilli = 5): Promise<T> {
 
         if (this._isLocked) {
-            await Util.delay(retryMilli);
+            await Promises.delay(retryMilli);
             return this.lock(timeMilli, retryMilli)
         }
 

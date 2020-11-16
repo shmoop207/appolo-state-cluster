@@ -1,14 +1,10 @@
-import * as _ from 'lodash'
+import {Objects} from '@appolo/utils'
 
 export class Util {
-    public static  delay(time) {
-        return new Promise((resolve,) => {
-            setTimeout(resolve, time)
-        })
-    }
+
 
     public static arrayConcat  (objValue:any, srcValue:any) {
-        if (_.isArray(objValue)) {
+        if (Array.isArray(objValue)) {
             return objValue.concat(srcValue);
         }
     }
