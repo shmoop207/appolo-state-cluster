@@ -19,47 +19,46 @@ let RedisParams = {
 describe("State", () => {
     let store;
     beforeEach(async () => {
-        store = new index_1.Store({ counter: 0 }, RedisParams);
-        await store.initialize();
+        store = await new index_1.Store().setInitialState({ counter: 0 })
+            .setOptions(RedisParams)
+            .initialize();
         await store.reset({ counter: 0 });
     });
     afterEach(async () => {
         await store.quit();
     });
     it("Should  init  state", async () => {
-        (await store.state()).counter.should.be.eq(0);
+        (await store.getState()).counter.should.be.eq(0);
     });
     it("Should  set state", async () => {
         await store.setState({ counter: 1 });
-        (await store.state()).counter.should.be.eq(1);
+        (await store.getState()).counter.should.be.eq(1);
     });
     it("Should  set state multi store", async () => {
-        let store2 = new index_1.Store({ counter: 0 }, RedisParams);
-        await Promise.all([store2.initialize()]);
+        let store2 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
         await store.setState({ counter: 1 });
         await delay(300);
-        (await store.state()).counter.should.be.eq(1);
-        (await store2.state()).counter.should.be.eq(1);
+        (await store.getState()).counter.should.be.eq(1);
+        (await store2.getState()).counter.should.be.eq(1);
         await store.reset();
         await delay(300);
-        (await store2.state()).counter.should.be.eq(0);
+        (await store2.getState()).counter.should.be.eq(0);
         await store2.quit();
     });
     it("Should  not change  state", async () => {
-        (await store.state()).counter++;
-        (await store.state()).counter.should.be.eq(0);
+        (await store.getState()).counter++;
+        (await store.getState()).counter.should.be.eq(0);
     });
     it("Should fire event on state change", async () => {
         store.setState({ counter: 1 });
-        let state = await store.once("stateChanged");
+        let { state } = await store.once("stateChanged");
         state.counter.should.be.eq(1);
         await store.reset();
     });
     it("Should fire event on 2 stores state change", async () => {
-        let store2 = new index_1.Store({ counter: 0 }, RedisParams);
-        await Promise.all([store2.initialize()]);
+        let store2 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
         store.setState({ counter: 1 });
-        let state = await store2.once("stateChanged");
+        let { state } = await store2.once("stateChanged");
         state.counter.should.be.eq(1);
         await store.reset();
         await store2.quit();
@@ -97,12 +96,12 @@ describe("State", () => {
         await store.setState({ counter: 2 });
         await store.setState({ counter: 3 });
         await store.goToPrevState();
-        (await store.state()).counter.should.be.eq(2);
+        (await store.getState()).counter.should.be.eq(2);
         (await store.prevState).counter.should.be.eq(1);
         (await store.nextState).counter.should.be.eq(3);
         await store.goToNextState();
         await delay(300);
-        (await store.state()).counter.should.be.eq(3);
+        (await store.getState()).counter.should.be.eq(3);
         (await store.prevState).counter.should.be.eq(2);
         (await store.nextState).counter.should.be.eq(3);
     });
@@ -112,7 +111,7 @@ describe("State", () => {
         await store.setState({ counter: 2 });
         await store.setState({ counter: 3 });
         await store.goToState(2);
-        (await store.state()).counter.should.be.eq(2);
+        (await store.getState()).counter.should.be.eq(2);
         (await store.prevState).counter.should.be.eq(1);
         (await store.nextState).counter.should.be.eq(3);
     });
@@ -122,7 +121,7 @@ describe("State", () => {
         await store.setState({ counter: 3 });
         await store.goToState(2);
         await store.setState({ counter: 4 });
-        (await store.state()).counter.should.be.eq(4);
+        (await store.getState()).counter.should.be.eq(4);
         (await store.prevState).counter.should.be.eq(2);
         (await store.nextState).counter.should.be.eq(4);
     });
@@ -134,7 +133,7 @@ describe("State", () => {
         await store.goToState(1);
         await store.setState({ counter: 5 });
         await store.setState({ counter: 6 });
-        (await store.state()).counter.should.be.eq(6);
+        (await store.getState()).counter.should.be.eq(6);
         (await store.stateAt(2)).counter.should.be.eq(5);
         (await store.stateAt(1)).counter.should.be.eq(1);
         (await store.nextState).counter.should.be.eq(6);
@@ -147,7 +146,7 @@ describe("State", () => {
         await store.setState({ counter: 4 });
         await store.goToState(1);
         await store.reset();
-        (await store.state()).counter.should.be.eq(0);
+        (await store.getState()).counter.should.be.eq(0);
         (await store.stateAt(2)).counter.should.be.eq(0);
         (await store.nextState).counter.should.be.eq(0);
         (await store.prevState).counter.should.be.eq(0);
@@ -159,63 +158,64 @@ describe("State", () => {
             store.setState({ counter: 4 }),
             store.setState({ counter: 5 }),
             store.setState({ counter: 6 })]);
-        (await store.state()).counter.should.be.eq(6);
+        (await store.getState()).counter.should.be.eq(6);
         (await store.stateAt(0)).counter.should.be.eq(2);
     });
     it("Should fire action event", async () => {
         class TempStore extends index_1.Store {
             constructor(options) {
-                super({ counter: 0 }, options);
+                super();
+                this.setInitialState({ counter: 0 });
+                this.setOptions(options);
             }
             async setCounter(value) {
                 await this.setState({ counter: value });
             }
         }
-        tslib_1.__decorate([
-            index_1.action()
-        ], TempStore.prototype, "setCounter", null);
         let store = new TempStore(RedisParams);
         await store.initialize();
         await store.setCounter(5);
-        let state = await store.once("setCounter");
+        let { state, value } = await store.once("counter");
         state.counter.should.be.eq(5);
+        value.should.be.eq(5);
     });
     it("Should fire action event with transaction", async () => {
         class TempStore extends index_1.Store {
             constructor(options) {
-                super({ counter: 1 }, options);
+                super();
+                this.setOptions(options);
+                this.setInitialState({ counter: 1 });
             }
             async setCounter(value, state) {
                 await this.setState({ counter: state.counter + 5 });
             }
         }
         tslib_1.__decorate([
-            index_1.action(),
             decorators_1.transaction()
         ], TempStore.prototype, "setCounter", null);
         let store = new TempStore(RedisParams);
         await store.initialize();
         await store.setCounter(5);
-        let state = await store.once("setCounter");
+        let { state } = await store.once("counter");
         state.counter.should.be.eq(5);
     });
     it("Should merge state", async () => {
         class TempStore extends index_1.Store {
             constructor(options) {
-                super({ item: { item2: 1 } }, options);
+                super();
+                this.setInitialState({ item: { item2: 1 } });
+                this.setOptions(Object.assign(Object.assign({}, options), { name: "TempStore" }));
             }
             async setCounter(value) {
                 await this.setState({ item: { item3: value } });
             }
         }
-        tslib_1.__decorate([
-            index_1.action()
-        ], TempStore.prototype, "setCounter", null);
         let store = new TempStore(RedisParams);
         await store.initialize();
-        store.setCounter(5);
+        await store.reset();
         await store.setCounter(5);
-        let state = await store.once("setCounter");
+        store.setCounter(5);
+        let { state } = await store.once("item");
         state.item.item3.should.be.eq(5);
     });
     it("Should setState concurrent", async () => {
@@ -226,7 +226,7 @@ describe("State", () => {
             store.setState({ counter: 4, d: 1 })
         ]);
         await delay(300);
-        let state = await store.state();
+        let state = await store.getState();
         state.counter.should.be.eq(4);
         state.b.should.be.eq(1);
         state.a.should.be.eq(1);
@@ -234,9 +234,8 @@ describe("State", () => {
         state.d.should.be.eq(1);
     });
     it("Should lock concurrent", async () => {
-        let store2 = new index_1.Store({ counter: 0 }, RedisParams);
-        let store3 = new index_1.Store({ counter: 0 }, RedisParams);
-        await Promise.all([store2.initialize(), store3.initialize()]);
+        let store2 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
+        let store3 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
         function inc(store) {
             return new Promise(async (resolve, reject) => {
                 let state = await store.lock();
@@ -249,7 +248,7 @@ describe("State", () => {
             inc(store), inc(store2), inc(store3)
         ]);
         await delay(300);
-        let state = await store.state();
+        let state = await store.getState();
         state.counter.should.be.eq(3);
         await Promise.all([
             store2.quit(), store3.quit()
@@ -268,18 +267,17 @@ describe("State", () => {
             inc(store), inc(store), inc(store)
         ]);
         await delay(300);
-        let state = await store.state();
+        let state = await store.getState();
         state.counter.should.be.eq(3);
     });
     it("Should increment concurrent", async () => {
-        let store2 = new index_1.Store({ counter: 0 }, RedisParams);
-        let store3 = new index_1.Store({ counter: 0 }, RedisParams);
-        await Promise.all([store2.initialize(), store3.initialize()]);
+        let store2 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
+        let store3 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
         await Promise.all([
             store.increment("counter", 1), store3.increment("counter", 2), store2.increment("counter", 3)
         ]);
         await delay(300);
-        let state = await store.state();
+        let state = await store.getState();
         state.counter.should.be.eq(6);
         await Promise.all([
             store2.quit(), store3.quit()

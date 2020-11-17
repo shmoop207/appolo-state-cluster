@@ -4,7 +4,7 @@ import fs = require("fs");
 import {Promises} from '@appolo/utils'
 import {IOptions} from "./IOptions";
 import {EventDispatcher} from "@appolo/events";
-import {Util} from "./util";
+import * as _ from "lodash";
 
 const {promisify} = require('util');
 
@@ -65,7 +65,7 @@ export class Client<T> extends EventDispatcher {
 
         this._sub.on("message", this._onMessage.bind(this));
 
-        await Promise.all([this._sub.subscribe(this._publishStateEventName),this._sub.subscribe(this._publishEventName)]);
+        await Promise.all([this._sub.subscribe(this._publishStateEventName), this._sub.subscribe(this._publishEventName)]);
 
 
     }
@@ -79,7 +79,7 @@ export class Client<T> extends EventDispatcher {
 
     private async loadScripts() {
 
-        await Promise.all(this.Scripts.map( async script => {
+        await Promise.all(this.Scripts.map(async script => {
             if (this._client[script.name]) {
                 return;
             }
@@ -208,7 +208,7 @@ export class Client<T> extends EventDispatcher {
         try {
             clearTimeout(this._interval);
 
-            let oldState = this._stateHash;
+            let oldStateHash = this._stateHash;
 
             if (newState) {
                 this._stateHash = newState
@@ -219,11 +219,25 @@ export class Client<T> extends EventDispatcher {
             this._isValidCache = true;
             setTimeout(() => this._isValidCache = false, this._options.cacheTime);
 
-            if (oldState != this._stateHash) {
-                process.nextTick(() => this.fireEvent("stateChanged", JSON.parse(this._stateHash)))
+            if (oldStateHash != this._stateHash) {
+                let newState = JSON.parse(this._stateHash);
+                let oldState = JSON.parse(oldStateHash);
+
+                let keys = Object.keys(newState), changed: string[] = [];
+
+                for (let i = 0; i < keys.length; i++) {
+                    let key = keys[i];
+                    if (!_.isEqual(newState[key], oldState[key])) {
+                        changed.push(key);
+                    }
+                }
+
+                setImmediate(() => {
+                    this.fireEvent("stateChanged",newState,changed)
+                })
             }
 
-            this._interval = setTimeout(() => this._refreshState(), 10 * 1000)
+            this._interval = setTimeout(() => this._refreshState(), this._options.refreshInterval)
         } catch (e) {
 
         }

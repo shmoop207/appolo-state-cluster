@@ -4,48 +4,92 @@ import {Client} from "./client";
 import {IEventOptions} from "@appolo/events";
 import {Util} from "./util";
 import * as _ from "lodash";
-import { Promises}from "@appolo/utils";
+import {Promises} from "@appolo/utils";
 import Timer = NodeJS.Timer;
 
-export class Store<T extends { [index: string]: any }> extends EventDispatcher {
+export type EventParams<T extends { [index: string]: any }, K extends keyof T> = { value?: T[K], state: T };
+
+export class Store<T extends { [index: string]: any }> {
 
     private _client: Client<T>;
-    private readonly _options: IOptions;
+    private _options: IOptions;
 
     private _lockedInterval: Timer;
     private _isLocked = false;
+    protected _initialState: T = {} as T;
 
-    constructor(private initialState: T = {} as T, options: IOptions) {
+    private _dispatcher = new EventDispatcher();
 
-        super();
+    public setInitialState(value: T): this {
+        this._initialState = value;
+        return this
+    }
 
-        this._options = Object.assign({}, DefaultOptions, options);
+    public setOptions(options: IOptions): this {
+        this._options = options;
+        return this
+    }
+
+    public async initialize(): Promise<this> {
+
+        this._options = Object.assign({}, DefaultOptions, this._options || {} as any);
 
 
         this._client = new Client(this._options);
-    }
 
-    public async initialize(): Promise<void> {
         await this._client.connect();
 
-        await this._client.initState(this.initialState);
+        await this._client.initState(this._initialState);
 
 
         this._client.on("stateChanged", this._onStateChanged, this);
-        this._client.on("publishEvent", this._onPublish, this);
 
+        return this;
     }
 
-    private _onStateChanged(state: T) {
-        this.fireEvent("stateChanged", state)
+    private _onStateChanged(state: T, keys: string) {
+
+        this._dispatcher.fireEvent("stateChanged", {state})
+        for (let i = 0; i < keys.length; i++) {
+            let key = keys[i];
+            this._dispatcher.fireEvent(key, {state, value: state[key]})
+
+        }
     }
 
-    private _onPublish(message: { name: string, data: any }) {
-        this.fireEvent(message.name, message.data);
+    // private _onPublish(message: { name: string, data: any }) {
+    //     this.fireEvent(message.name, message.data);
+    //
+    // }
 
+    public once<K extends string & keyof (T & { stateChanged })>(type: `K`): Promise<EventParams<T, K>>
+    public once<K extends keyof (T & { stateChanged })>(type: K, fn?: undefined | null, scope?: any, options?: IEventOptions): Promise<EventParams<T, K>>
+    public once<K extends keyof (T & { stateChanged })>(type: K, fn?: (params: EventParams<T, K>) => any, scope?: any, options: IEventOptions = {}) {
+        let result = this._dispatcher.once.apply(this._dispatcher, arguments)
+
+        return fn ? this : result
     }
 
-    public state(): Promise<T> {
+    public un<K extends keyof T>(type: K, fn: (params: EventParams<T, K>) => any, scope?: any): this {
+        this._dispatcher.un.apply(this._dispatcher, arguments);
+        return this;
+    }
+
+    public on<K extends keyof (T & { stateChanged })>(type: K, fn: (params: EventParams<T, K>) => any, scope?: any, options?: IEventOptions): this {
+        this._dispatcher.on.apply(this._dispatcher, arguments);
+        return this
+    }
+
+    public removeListenersByScope(scope: any): void {
+        this._dispatcher.removeListenersByScope(scope)
+    }
+
+    public removeAllListeners(): void {
+        this._dispatcher.removeAllListeners();
+    }
+
+
+    public getState(): Promise<T> {
         return this._client.state();
     }
 
@@ -53,7 +97,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         return this._client.statesCount();
     }
 
-    public  states(): AsyncIterableIterator<T> {
+    public states(): AsyncIterableIterator<T> {
 
         let $self = this, index = -1;
 
@@ -75,17 +119,19 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
         }
     }
 
-    public once(event: string, fn?: (...args: any[]) => any, scope?: any, options: IEventOptions = {}): Promise<T> {
-        return super.once(event, fn, scope, options) as  Promise<T>
-    }
-
 
     public stateAt(index: number): Promise<T> {
         return this._client.stateAt(index);
     }
 
 
-    public async setState(value: Partial<T> | T, options: SetStateOptions = SetStateDefaults) {
+    public async setState(value: Partial<T> | T, options?: SetStateOptions) {
+
+        if (!options) {
+            options = SetStateDefaults
+        } else {
+            options = Object.assign({}, SetStateDefaults, options)
+        }
 
         if (options.override) {
             await this._client.setState(value as T);
@@ -93,7 +139,7 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
             return;
         }
 
-        let state = await ((this._isLocked || !options.lock) ? this.state() : this.lock());
+        let state = await ((this._isLocked || !options.lock) ? this.getState() : this.lock());
 
         state = _.mergeWith(state, value, options.arrayMerge == "concat" ? Util.arrayConcat : null);
 
@@ -120,7 +166,6 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
             await Promises.delay(retryMilli);
             return this.lock(timeMilli, retryMilli)
         }
-
 
 
         let state = await this._client.lock(timeMilli, retryMilli);
@@ -157,10 +202,10 @@ export class Store<T extends { [index: string]: any }> extends EventDispatcher {
 
     public async reset(state?: T) {
         if (state) {
-            this.initialState = state;
+            this._initialState = state;
         }
 
-        await this._client.reset(this.initialState)
+        await this._client.reset(this._initialState)
 
     }
 

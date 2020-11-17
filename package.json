@@ -18,7 +18,7 @@
     "test": "mocha test  --timeout 5000 --exit"
   },
   "main": "./index.js",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -46,6 +46,6 @@
     "mocha": "^8.2.1",
     "sinon": "^9.2.1",
     "sinon-chai": "^3.5.0",
-    "typescript": "^4.0.5"
+    "typescript": "^4.1.1-rc"
   }
 }

@@ -9,12 +9,15 @@ export interface IOptions {
     initial?: number
     cache?: boolean
     cacheTime?: number
+    refreshInterval?: number
 }
 
 export let DefaultOptions: Partial<IOptions> = {
     maxStates: 1,
     cache: true,
-    cacheTime: 60 * 1000
+    cacheTime: 60 * 1000,
+    refreshInterval:10 *1000
+
 };
 
 export interface SetStateOptions {
