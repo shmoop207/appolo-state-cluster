@@ -124,8 +124,16 @@ export class Store<T extends { [index: string]: any }> {
         return this._client.stateAt(index);
     }
 
+    public async set<K extends string & keyof T>(key: K, value: T[K], options?: SetStateOptions): Promise<T> {
 
-    public async setState(value: Partial<T> | T, options?: SetStateOptions) {
+        let dto: Partial<T> = {};
+
+        dto[key] = value;
+
+        return this.setState(dto, options);
+    }
+
+    public async setState(value: Partial<T> | T, options?: SetStateOptions): Promise<T> {
 
         if (!options) {
             options = SetStateDefaults
@@ -146,6 +154,8 @@ export class Store<T extends { [index: string]: any }> {
         await this._client.setState(state as T);
 
         this._isLocked = false;
+
+        return state
 
     }
 
@@ -209,9 +219,6 @@ export class Store<T extends { [index: string]: any }> {
 
     }
 
-    public async publish(name: string, data: any) {
-        await this._client.publish(name, data)
-    }
 
     public async quit() {
         clearTimeout(this._lockedInterval);

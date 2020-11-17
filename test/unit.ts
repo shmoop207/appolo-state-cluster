@@ -1,5 +1,5 @@
 import chai = require("chai");
-import { IOptions, Store} from "../index"
+import {IOptions, Store} from "../index"
 import {transaction} from "../lib/decorators";
 
 let should = chai.should();
@@ -51,6 +51,15 @@ describe("State", () => {
 
 
         await store.setState({counter: 1});
+
+        (await store.getState()).counter.should.be.eq(1);
+
+    });
+
+    it.only("Should  set state with set", async () => {
+
+
+        await store.set("counter", 1);
 
         (await store.getState()).counter.should.be.eq(1);
 
@@ -332,15 +341,15 @@ describe("State", () => {
 
     it("Should merge state", async () => {
 
-        class TempStore extends Store<{item: {item3?: number,item2?: number}}> {
+        class TempStore extends Store<{ item: { item3?: number, item2?: number } }> {
 
             constructor(options: IOptions) {
                 super();
                 this.setInitialState({item: {item2: 1}})
-                this.setOptions({...options,...{name:"TempStore"}})
+                this.setOptions({...options, ...{name: "TempStore"}})
             }
 
-            async setCounter(value:number) {
+            async setCounter(value: number) {
                 await this.setState({item: {item3: value}});
             }
         }
@@ -351,14 +360,13 @@ describe("State", () => {
         await store.reset()
 
 
-       await store.setCounter(5);
+        await store.setCounter(5);
 
-         store.setCounter(5);
+        store.setCounter(5);
 
         let {state} = await store.once("item")
 
         state.item.item3.should.be.eq(5);
-
 
 
     });
@@ -387,9 +395,9 @@ describe("State", () => {
     it("Should lock concurrent", async () => {
 
         let store2 = await new Store<{ counter: number }>().setInitialState({counter: 0}).setOptions(RedisParams).initialize();
-        let store3 = await new Store<{ counter: number }>().setInitialState({counter: 0}).setOptions( RedisParams).initialize();
+        let store3 = await new Store<{ counter: number }>().setInitialState({counter: 0}).setOptions(RedisParams).initialize();
 
-        function inc(store: Store<{ counter: number }>):Promise<void> {
+        function inc(store: Store<{ counter: number }>): Promise<void> {
             return new Promise(async (resolve, reject) => {
 
                 let state = await store.lock();
@@ -418,7 +426,7 @@ describe("State", () => {
 
     it("Should multi lock concurrent", async () => {
 
-        function inc(store: Store<{ counter: number }>):Promise<void> {
+        function inc(store: Store<{ counter: number }>): Promise<void> {
             return new Promise(async (resolve, reject) => {
 
                 let state = await store.lock();
@@ -446,7 +454,6 @@ describe("State", () => {
 
         let store2 = await new Store<{ counter: number }>().setInitialState({counter: 0}).setOptions(RedisParams).initialize();
         let store3 = await new Store<{ counter: number }>().setInitialState({counter: 0}).setOptions(RedisParams).initialize();
-
 
 
         await Promise.all([

@@ -34,6 +34,10 @@ describe("State", () => {
         await store.setState({ counter: 1 });
         (await store.getState()).counter.should.be.eq(1);
     });
+    it.only("Should  set state with set", async () => {
+        await store.set("counter", 1);
+        (await store.getState()).counter.should.be.eq(1);
+    });
     it("Should  set state multi store", async () => {
         let store2 = await new index_1.Store().setInitialState({ counter: 0 }).setOptions(RedisParams).initialize();
         await store.setState({ counter: 1 });
